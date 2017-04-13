@@ -1,0 +1,933 @@
+{
+	"AWSTemplateFormatVersion":"2010-09-09",
+	"Description":"F5 Networks Application Connector v0.1.7: https://github.com/ArtiomL/f5-app-connector",
+	"Metadata":{
+		"AWS::CloudFormation::Interface":{
+			"ParameterGroups":[
+				{
+					"Label":{
+						"default":"Basic"
+					},
+					"Parameters":[
+						"appConnectorName",
+						"acUsername",
+						"acPassword",
+						"bigipAddress",
+						"bigipPort",
+						"appInstance1Name",
+						"appInstance2Name",
+						"keyPair"
+					]
+				},
+				{
+					"Label":{
+						"default":"Size"
+					},
+					"Parameters":[
+						"appConnectorType"
+					]
+				},
+				{
+					"Label":{
+						"default":"Image"
+					},
+					"Parameters":[
+						"appConnectorAMI"
+					]
+				}
+			],
+			"ParameterLabels":{
+
+			}
+		}
+	},
+	"Parameters":{
+		"keyPair":{
+			"Description":"Existing EC2 key pair name",
+			"Type":"AWS::EC2::KeyPair::KeyName",
+			"ConstraintDescription":"Must be a name of an existing EC2 key pair"
+		},
+		"appConnectorName":{
+			"Description":"Application Connector instance name",
+			"Type":"String",
+			"Default":"appConnector"
+		},
+		"appInstance1Name":{
+			"Description":"1st web application instance name",
+			"Type":"String",
+			"Default":"appInstance1"
+		},
+		"appInstance2Name":{
+			"Description":"2nd web application instance name",
+			"Type":"String",
+			"Default":"appInstance2"
+		},
+		"acUsername":{
+			"Type":"String",
+			"Description":"Application Connector admin username (management access)",
+			"MaxLength":"255",
+			"MinLength":"1",
+			"Default":"admin"
+		},
+		"acPassword":{
+			"Type":"String",
+			"NoEcho":"true",
+			"Description":"Application Connector admin password",
+			"MaxLength":"255",
+			"MinLength":"1"
+		},
+		"bigipAddress":{
+			"Type":"String",
+			"Description":"Service Center IP or FQDN address",
+			"MaxLength":"255",
+			"MinLength":"3",
+			"Default":"ac.f5labs.one"
+		},
+		"bigipPort":{
+			"Type":"Number",
+			"Description":"Service Center TCP/IP port",
+			"MaxValue":"65535",
+			"Default":"443"
+		},
+		"appConnectorType":{
+			"Description":"EC2 instance type",
+			"Type":"String",
+			"Default":"t2.micro",
+			"AllowedValues":[
+				"t1.micro",
+				"t2.micro",
+				"t2.small"
+			],
+			"ConstraintDescription":"Choose one of the following."
+		},
+		"appConnectorAMI":{
+			"Description":"CentOS Linux 7 and region AMI",
+			"Type":"String",
+			"Default":"ami-9bf712f4",
+			"AllowedValues":[
+				"ami-9bf712f4",
+				"ami-d2c924b2",
+				"ami-6d1c2007"
+			]
+		}
+	},
+	"Resources":{
+		"StackVPC":{
+			"Type":"AWS::EC2::VPC",
+			"Properties":{
+				"EnableDnsSupport":"true",
+				"EnableDnsHostnames":"true",
+				"CidrBlock":"10.10.0.0/16",
+				"Tags":[
+					{
+						"Key":"Name",
+						"Value":{
+							"Fn::Join":[
+								"",
+								[
+									"VPC-",
+									{
+										"Ref":"AWS::StackName"
+									}
+								]
+							]
+						}
+					}
+				]
+			}
+		},
+		"externalSubnet":{
+			"Type":"AWS::EC2::Subnet",
+			"Properties":{
+				"VpcId":{
+					"Ref":"StackVPC"
+				},
+				"CidrBlock":"10.10.10.0/24",
+				"MapPublicIpOnLaunch":true,
+				"Tags":[
+					{
+						"Key":"Name",
+						"Value":{
+							"Fn::Join":[
+								"",
+								[
+									"ExternalSubnet-",
+									{
+										"Ref":"AWS::StackName"
+									}
+								]
+							]
+						}
+					}
+				]
+			}
+		},
+		"internalSubnet":{
+			"Type":"AWS::EC2::Subnet",
+			"Properties":{
+				"VpcId":{
+					"Ref":"StackVPC"
+				},
+				"CidrBlock":"10.10.20.0/24",
+				"MapPublicIpOnLaunch":false,
+				"Tags":[
+					{
+						"Key":"Name",
+						"Value":{
+							"Fn::Join":[
+								"",
+								[
+									"internalSubnet-",
+									{
+										"Ref":"AWS::StackName"
+									}
+								]
+							]
+						}
+					}
+				]
+			}
+		},
+		"StackInternetGateway":{
+			"Type":"AWS::EC2::InternetGateway",
+			"Properties":{
+				"Tags":[
+					{
+						"Key":"Name",
+						"Value":{
+							"Fn::Join":[
+								"",
+								[
+									"InternetGateway-",
+									{
+										"Ref":"AWS::StackName"
+									}
+								]
+							]
+						}
+					}
+				]
+			}
+		},
+		"AttachGateway":{
+			"Type":"AWS::EC2::VPCGatewayAttachment",
+			"Properties":{
+				"VpcId":{
+					"Ref":"StackVPC"
+				},
+				"InternetGatewayId":{
+					"Ref":"StackInternetGateway"
+				}
+			}
+		},
+		"ServerNATGatewayEIP":{
+			"Type":"AWS::EC2::EIP",
+			"Properties":{
+
+			}
+		},
+		"ServerNATGateway":{
+			"DependsOn":"internalSubnetRouteTableAssociation",
+			"Type":"AWS::EC2::NatGateway",
+			"Properties":{
+				"AllocationId":{
+					"Fn::GetAtt":[
+						"ServerNATGatewayEIP",
+						"AllocationId"
+					]
+				},
+				"SubnetId":{
+					"Ref":"externalSubnet"
+				}
+			}
+		},
+		"ExternalRouteTable":{
+			"Type":"AWS::EC2::RouteTable",
+			"Properties":{
+				"VpcId":{
+					"Ref":"StackVPC"
+				},
+				"Tags":[
+					{
+						"Key":"Name",
+						"Value":{
+							"Fn::Join":[
+								"",
+								[
+									"ExternalRouteTable-",
+									{
+										"Ref":"AWS::StackName"
+									}
+								]
+							]
+						}
+					}
+				]
+			}
+		},
+		"ExternalRoute":{
+			"Type":"AWS::EC2::Route",
+			"Properties":{
+				"RouteTableId":{
+					"Ref":"ExternalRouteTable"
+				},
+				"DestinationCidrBlock":"0.0.0.0/0",
+				"GatewayId":{
+					"Ref":"StackInternetGateway"
+				}
+			}
+		},
+		"ExternalSubnetRouteTableAssociation":{
+			"Type":"AWS::EC2::SubnetRouteTableAssociation",
+			"Properties":{
+				"SubnetId":{
+					"Ref":"externalSubnet"
+				},
+				"RouteTableId":{
+					"Ref":"ExternalRouteTable"
+				}
+			}
+		},
+		"internalRouteTable":{
+			"Type":"AWS::EC2::RouteTable",
+			"Properties":{
+				"VpcId":{
+					"Ref":"StackVPC"
+				},
+				"Tags":[
+					{
+						"Key":"Name",
+						"Value":{
+							"Fn::Join":[
+								"",
+								[
+									"internalRouteTable-",
+									{
+										"Ref":"AWS::StackName"
+									}
+								]
+							]
+						}
+					}
+				]
+			}
+		},
+		"ServerRoute":{
+			"Type":"AWS::EC2::Route",
+			"Properties":{
+				"RouteTableId":{
+					"Ref":"internalRouteTable"
+				},
+				"DestinationCidrBlock":"0.0.0.0/0",
+				"NatGatewayId":{
+					"Ref":"ServerNATGateway"
+				}
+			}
+		},
+		"internalSubnetRouteTableAssociation":{
+			"Type":"AWS::EC2::SubnetRouteTableAssociation",
+			"Properties":{
+				"SubnetId":{
+					"Ref":"internalSubnet"
+				},
+				"RouteTableId":{
+					"Ref":"internalRouteTable"
+				}
+			}
+		},
+		"appConnectorSecurityGroup":{
+			"Type":"AWS::EC2::SecurityGroup",
+			"Properties":{
+				"GroupDescription":"Enable HTTP and SSH",
+				"VpcId":{
+					"Ref":"StackVPC"
+				},
+				"SecurityGroupIngress":[
+					{
+						"IpProtocol":"tcp",
+						"FromPort":"8090",
+						"ToPort":"8090",
+						"CidrIp":"0.0.0.0/0"
+					},
+					{
+						"IpProtocol":"tcp",
+						"FromPort":"22",
+						"ToPort":"22",
+						"CidrIp":"0.0.0.0/0"
+					}
+				]
+			}
+		},
+		"appConnectorInstance":{
+			"DependsOn":["ServerNATGateway","appInstance1","appInstance2"],
+			"Type":"AWS::EC2::Instance",
+			"Metadata":{
+				"AWS::CloudFormation::Init":{
+					"config":{
+						"files":{
+							"/opt/signalDone.sh":{
+								"content":{
+									"Fn::Join":[
+										"",
+										[
+											"#!/bin/bash\n",
+											"/opt/aws/bin/cfn-signal -e $? '",
+											{
+												"Ref":"appConnectorWaitHandle"
+											},
+											"'\n"
+										]
+									]
+								},
+								"mode":"000755",
+								"owner":"root",
+								"group":"root"
+							},
+							"/opt/f5_ac_0_1_7.tar.gz":{
+								"source":"https://raw.githubusercontent.com/ArtiomL/f5-app-connector/master/f5_ac_0_1_7.tar.gz",
+								"mode":"000644",
+								"owner":"root",
+								"group":"root"
+							},
+							"/opt/appConfiguartion.sh":{
+								"content":{
+									"Fn::Join":[
+										"",
+										[
+											"#!/bin/bash -xe\n",
+											"#\n",
+											"# Download Node\n",
+											"curl --silent --location https://rpm.nodesource.com/setup_7.x | bash -\n",
+											"#\n",
+											"# Install Node\n",
+											"yum -y install nodejs\n",
+											"#\n",
+											"# Install Docker\n",
+											"curl -fsSL https://get.docker.com/ | sh\n",
+											"#\n",
+											"# Start Docker\n",
+											"systemctl start docker\n",
+											"#\n",
+											"# Load the Proxy Container\n",
+											"cd /opt\n",
+											"docker load -i f5_ac_0_1_7.tar.gz\n",
+											"#\n",
+											"# Start the Proxy Container\n",
+											"docker run -d -e httpPort=8090 --restart=always --net=host -e proxyName=",
+											{
+												"Ref":"appConnectorName"
+											},
+											" -e user=",
+											{
+												"Ref":"acUsername"
+											},
+											" -e passwd=",
+											{
+												"Ref":"acPassword"
+											},
+											" -it -v /home/user/cloud_vendors/aws:/app/proxy/vendors/aws -v /app/proxy/log -v /app/proxy/config f5/ac:v0.1.7\n",
+											"#\n",
+											"# Download Application Connector Control\n",
+											"curl --silent https://raw.githubusercontent.com/ArtiomL/f5-app-connector/master/acctl.js -o /opt/acctl.js\n",
+											"#\n",
+											"# Install request\n",
+											"npm install request\n",
+											"sleep 5\n",
+											"node /opt/acctl.js connections ",
+											{
+												"Ref":"acUsername"
+											},
+											" ",
+											{
+												"Ref":"acPassword"
+											},
+											" ",
+											{
+												"Ref":"bigipAddress"
+											},
+											" ",
+											{
+												"Ref":"bigipPort"
+											},
+											"\n",
+											"exit\n"
+										]
+									]
+								},
+								"mode":"000755",
+								"owner":"root",
+								"group":"root"
+							}
+						},
+						"commands":{
+							"001-app-config":{
+								"command":"/opt/appConfiguartion.sh &>> /var/log/appconfig.log"
+							},
+							"002-signal-done":{
+								"command":"/opt/signalDone.sh &>> /var/log/signal.log"
+							}
+						}
+					}
+				}
+			},
+			"Properties":{
+				"InstanceType":{
+					"Ref":"appConnectorType"
+				},
+				"ImageId":{
+					"Ref":"appConnectorAMI"
+				},
+				"KeyName":{
+					"Ref":"keyPair"
+				},
+				"SubnetId":{
+					"Ref":"externalSubnet"
+				},
+				"SecurityGroupIds":[
+					{
+						"Fn::GetAtt":[
+							"appConnectorSecurityGroup",
+							"GroupId"
+						]
+					}
+				],
+				"UserData":{
+					"Fn::Base64":{
+						"Fn::Join":[
+							"",
+							[
+								"#!/bin/bash -xe\n",
+								"#\n",
+								"cd /opt\n",
+								"curl -O https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz\n",
+								"tar -xvpf aws-cfn-bootstrap-latest.tar.gz\n",
+								"cd aws-cfn-bootstrap-1.4/\n",
+								"python setup.py build\n",
+								"python setup.py install\n",
+								"ln -s /usr/init/redhat/cfn-hup /etc/init.d/cfn-hup\n",
+								"chmod 775 /usr/init/redhat/cfn-hup\n",
+								"cd /opt\n",
+								"mkdir aws\n",
+								"cd aws\n",
+								"mkdir bin\n",
+								"ln -s /usr/bin/cfn-hup /opt/aws/bin/cfn-hup\n",
+								"ln -s /usr/bin/cfn-init /opt/aws/bin/cfn-init\n",
+								"ln -s /usr/bin/cfn-signal /opt/aws/bin/cfn-signal\n",
+								"ln -s /usr/bin/cfn-elect-cmd-leader /opt/aws/bin/cfn-elect-cmd-leader\n",
+								"ln -s /usr/bin/cfn-get-metadata /opt/aws/bin/cfn-get-metadata\n",
+								"ln -s /usr/bin/cfn-send-cmd-event /opt/aws/bin/cfn-send-cmd-event\n",
+								"ln -s /usr/bin/cfn-send-cmd-result /opt/aws/bin/cfn-send-cmd-result\n",
+								"\n",
+								"/opt/aws/bin/cfn-init -v ",
+								" --stack ",
+								{
+									"Ref":"AWS::StackName"
+								},
+								" --resource appConnectorInstance",
+								" --region ",
+								{
+									"Ref":"AWS::Region"
+								},
+								"\n"
+							]
+						]
+					}
+				}
+			}
+		},
+		"appConnectorWaitCondition":{
+			"Type":"AWS::CloudFormation::WaitCondition",
+			"DependsOn":"appConnectorInstance",
+			"Properties":{
+				"Handle":{
+					"Ref":"appConnectorWaitHandle"
+				},
+				"Count":"1",
+				"Timeout":"1200"
+			}
+		},
+		"appConnectorWaitHandle":{
+			"Type":"AWS::CloudFormation::WaitConditionHandle",
+			"Properties":{
+
+			}
+		},
+		"appInstanceSecurityGroup":{
+			"Type":"AWS::EC2::SecurityGroup",
+			"Properties":{
+				"GroupDescription":"Enable connectivity from other subnets",
+				"VpcId":{
+					"Ref":"StackVPC"
+				},
+				"SecurityGroupIngress":[
+					{
+						"IpProtocol":"-1",
+						"FromPort":"-1",
+						"ToPort":"-1",
+						"CidrIp":"10.10.0.0/16"
+					}
+				]
+			}
+		},
+		"appInstance1":{
+			"DependsOn":"ServerNATGateway",
+			"Type":"AWS::EC2::Instance",
+			"Metadata":{
+				"AWS::CloudFormation::Init":{
+					"config":{
+						"files":{
+							"/opt/signalDone.sh":{
+								"content":{
+									"Fn::Join":[
+										"",
+										[
+											"#!/bin/bash\n",
+											"/opt/aws/bin/cfn-signal -e $? '",
+											{
+												"Ref":"appInstance1WaitHandle"
+											},
+											"'\n"
+										]
+									]
+								},
+								"mode":"000755",
+								"owner":"root",
+								"group":"root"
+							},
+							"/opt/appConfiguartion.sh":{
+								"content":{
+									"Fn::Join":[
+										"",
+										[
+											"#!/bin/bash -xe\n",
+											"#\n",
+											"yum clean all\n",
+											"yum -y update\n",
+											"yum -y install httpd\n",
+											"yum -y install php\n",
+											"curl --silent https://raw.githubusercontent.com/ArtiomL/adct/master/index.php -o /var/www/html/index.php\n",
+											"systemctl start httpd\n",
+											"systemctl enable httpd\n",
+											"date\n",
+											"echo $(systemctl status httpd)\n"
+										]
+									]
+								},
+								"mode":"000755",
+								"owner":"root",
+								"group":"root"
+							}
+						},
+						"commands":{
+							"001-app-config":{
+								"command":"/opt/appConfiguartion.sh &>> /var/log/appconfig.log"
+							},
+							"002-signal-done":{
+								"command":"/opt/signalDone.sh &>> /var/log/signal.log"
+							}
+						}
+					}
+				}
+			},
+			"Properties":{
+				"InstanceType":{
+					"Ref":"appConnectorType"
+				},
+				"ImageId":{
+					"Ref":"appConnectorAMI"
+				},
+				"KeyName":{
+					"Ref":"keyPair"
+				},
+				"SubnetId":{
+					"Ref":"internalSubnet"
+				},
+				"SecurityGroupIds":[
+					{
+						"Fn::GetAtt":[
+							"appInstanceSecurityGroup",
+							"GroupId"
+						]
+					}
+				],
+				"UserData":{
+					"Fn::Base64":{
+						"Fn::Join":[
+							"",
+							[
+								"#!/bin/bash -xe\n",
+								"#\n",
+								"cd /opt\n",
+								"curl -O https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz\n",
+								"tar -xvpf aws-cfn-bootstrap-latest.tar.gz\n",
+								"cd aws-cfn-bootstrap-1.4/\n",
+								"python setup.py build\n",
+								"python setup.py install\n",
+								"ln -s /usr/init/redhat/cfn-hup /etc/init.d/cfn-hup\n",
+								"chmod 775 /usr/init/redhat/cfn-hup\n",
+								"cd /opt\n",
+								"mkdir aws\n",
+								"cd aws\n",
+								"mkdir bin\n",
+								"ln -s /usr/bin/cfn-hup /opt/aws/bin/cfn-hup\n",
+								"ln -s /usr/bin/cfn-init /opt/aws/bin/cfn-init\n",
+								"ln -s /usr/bin/cfn-signal /opt/aws/bin/cfn-signal\n",
+								"ln -s /usr/bin/cfn-elect-cmd-leader /opt/aws/bin/cfn-elect-cmd-leader\n",
+								"ln -s /usr/bin/cfn-get-metadata /opt/aws/bin/cfn-get-metadata\n",
+								"ln -s /usr/bin/cfn-send-cmd-event /opt/aws/bin/cfn-send-cmd-event\n",
+								"ln -s /usr/bin/cfn-send-cmd-result /opt/aws/bin/cfn-send-cmd-result\n",
+								"\n",
+								"/opt/aws/bin/cfn-init -v ",
+								" --stack ",
+								{
+									"Ref":"AWS::StackName"
+								},
+								" --resource appInstance1",
+								" --region ",
+								{
+									"Ref":"AWS::Region"
+								},
+								"\n"
+							]
+						]
+					}
+				}
+			}
+		},
+		"appInstance1WaitCondition":{
+			"Type":"AWS::CloudFormation::WaitCondition",
+			"DependsOn":"appInstance1",
+			"Properties":{
+				"Handle":{
+					"Ref":"appInstance1WaitHandle"
+				},
+				"Count":"1",
+				"Timeout":"1200"
+			}
+		},
+		"appInstance1WaitHandle":{
+			"Type":"AWS::CloudFormation::WaitConditionHandle",
+			"Properties":{
+
+			}
+		},
+		"appInstance2":{
+			"DependsOn":"ServerNATGateway",
+			"Type":"AWS::EC2::Instance",
+			"Metadata":{
+				"AWS::CloudFormation::Init":{
+					"config":{
+						"files":{
+							"/opt/signalDone.sh":{
+								"content":{
+									"Fn::Join":[
+										"",
+										[
+											"#!/bin/bash\n",
+											"/opt/aws/bin/cfn-signal -e $? '",
+											{
+												"Ref":"appInstance2WaitHandle"
+											},
+											"'\n"
+										]
+									]
+								},
+								"mode":"000755",
+								"owner":"root",
+								"group":"root"
+							},
+							"/opt/appConfiguartion.sh":{
+								"content":{
+									"Fn::Join":[
+										"",
+										[
+											"#!/bin/bash -xe\n",
+											"#\n",
+											"yum clean all\n",
+											"yum -y update\n",
+											"yum -y install httpd\n",
+											"yum -y install php\n",
+											"curl --silent https://raw.githubusercontent.com/ArtiomL/adct/master/index.php -o /var/www/html/index.php\n",
+											"systemctl start httpd\n",
+											"systemctl enable httpd\n",
+											"date\n",
+											"echo $(systemctl status httpd)\n"
+										]
+									]
+								},
+								"mode":"000755",
+								"owner":"root",
+								"group":"root"
+							}
+						},
+						"commands":{
+							"001-app-config":{
+								"command":"/opt/appConfiguartion.sh &>> /var/log/appconfig.log"
+							},
+							"002-signal-done":{
+								"command":"/opt/signalDone.sh &>> /var/log/signal.log"
+							}
+						}
+					}
+				}
+			},
+			"Properties":{
+				"InstanceType":{
+					"Ref":"appConnectorType"
+				},
+				"ImageId":{
+					"Ref":"appConnectorAMI"
+				},
+				"KeyName":{
+					"Ref":"keyPair"
+				},
+				"SubnetId":{
+					"Ref":"internalSubnet"
+				},
+				"SecurityGroupIds":[
+					{
+						"Fn::GetAtt":[
+							"appInstanceSecurityGroup",
+							"GroupId"
+						]
+					}
+				],
+				"UserData":{
+					"Fn::Base64":{
+						"Fn::Join":[
+							"",
+							[
+								"#!/bin/bash -xe\n",
+								"#\n",
+								"cd /opt\n",
+								"curl -O https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz\n",
+								"tar -xvpf aws-cfn-bootstrap-latest.tar.gz\n",
+								"cd aws-cfn-bootstrap-1.4/\n",
+								"python setup.py build\n",
+								"python setup.py install\n",
+								"ln -s /usr/init/redhat/cfn-hup /etc/init.d/cfn-hup\n",
+								"chmod 775 /usr/init/redhat/cfn-hup\n",
+								"cd /opt\n",
+								"mkdir aws\n",
+								"cd aws\n",
+								"mkdir bin\n",
+								"ln -s /usr/bin/cfn-hup /opt/aws/bin/cfn-hup\n",
+								"ln -s /usr/bin/cfn-init /opt/aws/bin/cfn-init\n",
+								"ln -s /usr/bin/cfn-signal /opt/aws/bin/cfn-signal\n",
+								"ln -s /usr/bin/cfn-elect-cmd-leader /opt/aws/bin/cfn-elect-cmd-leader\n",
+								"ln -s /usr/bin/cfn-get-metadata /opt/aws/bin/cfn-get-metadata\n",
+								"ln -s /usr/bin/cfn-send-cmd-event /opt/aws/bin/cfn-send-cmd-event\n",
+								"ln -s /usr/bin/cfn-send-cmd-result /opt/aws/bin/cfn-send-cmd-result\n",
+								"\n",
+								"/opt/aws/bin/cfn-init -v ",
+								" --stack ",
+								{
+									"Ref":"AWS::StackName"
+								},
+								" --resource appInstance2",
+								" --region ",
+								{
+									"Ref":"AWS::Region"
+								},
+								"\n"
+							]
+						]
+					}
+				}
+			}
+		},
+		"appInstance2WaitCondition":{
+			"Type":"AWS::CloudFormation::WaitCondition",
+			"DependsOn":"appInstance2",
+			"Properties":{
+				"Handle":{
+					"Ref":"appInstance2WaitHandle"
+				},
+				"Count":"1",
+				"Timeout":"1200"
+			}
+		},
+		"appInstance2WaitHandle":{
+			"Type":"AWS::CloudFormation::WaitConditionHandle",
+			"Properties":{
+
+			}
+		}
+	},
+	"Outputs":{
+		"AppConnectorURL":{
+			"Description":"Application Connector management access URL",
+			"Value":{
+				"Fn::Join":[
+					"",
+					[
+						"https://",
+						{
+							"Fn::GetAtt":[
+								"appConnectorInstance",
+								"PublicDnsName"
+							]
+						},
+						":8090/"
+					]
+				]
+			}
+		},
+		"appInstance1":{
+			"Description":"Information required to add this instance as an Application Connector node",
+			"Value":{
+				"Fn::Join":[
+					"",
+					[
+						{
+							"Ref":"appInstance1"
+						},
+						"##",
+						{
+							"Ref":"StackVPC"
+						},
+						"##",
+						{
+							"Fn::GetAtt":[
+								"appInstance1",
+								"PrivateIp"
+							]
+						},
+						"##",
+						{
+							"Ref":"appInstance1Name"
+						}
+					]
+				]
+			}
+		},
+		"appInstance2":{
+			"Description":"Information required to add this instance as an Application Connector node",
+			"Value":{
+				"Fn::Join":[
+					"",
+					[
+						{
+							"Ref":"appInstance2"
+						},
+						"##",
+						{
+							"Ref":"StackVPC"
+						},
+						"##",
+						{
+							"Fn::GetAtt":[
+								"appInstance2",
+								"PrivateIp"
+							]
+						},
+						"##",
+						{
+							"Ref":"appInstance2Name"
+						}
+					]
+				]
+			}
+		}
+	}
+}
