@@ -457,6 +457,63 @@
 												"Ref":"bigipPort"
 											},
 											"\n",
+											"sleep 60\n",
+											"node /opt/acctl.js nodes ",
+											{
+												"Ref":"acUsername"
+											},
+											" ",
+											{
+												"Ref":"acPassword"
+											},
+											" ",
+											{
+												"Ref":"appInstance1Name"
+											},
+											" ",
+											{
+												"Fn::GetAtt":[
+													"appInstance1",
+													"PrivateIp"
+												]
+											},
+											" 80 ",
+											{
+												"Ref":"appInstance1"
+											},
+											" ",
+											{
+												"Ref":"StackVPC"
+											},
+											"\n",
+											"node /opt/acctl.js nodes ",
+											{
+												"Ref":"acUsername"
+											},
+											" ",
+											{
+												"Ref":"acPassword"
+											},
+											" ",
+											{
+												"Ref":"appInstance2Name"
+											},
+											" ",
+											{
+												"Fn::GetAtt":[
+													"appInstance2",
+													"PrivateIp"
+												]
+											},
+											" 80 ",
+											{
+												"Ref":"appInstance2"
+											},
+											" ",
+											{
+												"Ref":"StackVPC"
+											},
+											"\n",
 											"exit\n"
 										]
 									]
