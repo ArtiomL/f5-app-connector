@@ -56,5 +56,6 @@ switch (objArgs[0]) {
 }
 
 funHTTP(funREST(objArgs[0], objBody), function (objError, objHResp, strHBody) {
-	if (objError) console.log(JSON.stringify(objError));
+	if (objError) console.log('Error: %j', objError);
+	else console.log(strHBody);
 });
