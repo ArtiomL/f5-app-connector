@@ -2,7 +2,7 @@
 	acctl - F5 Application Connector Control
 	https://github.com/ArtiomL/f5-app-connector
 	Artiom Lichtenstein
-	v1.4, 29/03/2017
+	v1.5, 14/04/2017
 */
 
 'use strict';
@@ -29,7 +29,7 @@ function funREST(strEndPoint, objRBody) {
 			user: strACUser,
 			password: strACPass
 		},
-		body: objBody,
+		body: objRBody,
 		json: true,
 		rejectUnauthorized: false
 	};
