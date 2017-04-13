@@ -1,6 +1,6 @@
 {
 	"AWSTemplateFormatVersion":"2010-09-09",
-	"Description":"F5 Networks Application Connector v0.1.7: https://github.com/ArtiomL/f5-app-connector",
+	"Description":"F5 Networks Application Connector v1.0.3: https://github.com/ArtiomL/f5-app-connector",
 	"Metadata":{
 		"AWS::CloudFormation::Interface":{
 			"ParameterGroups":[
@@ -10,6 +10,7 @@
 					},
 					"Parameters":[
 						"appConnectorName",
+						"acContainerURL",
 						"acUsername",
 						"acPassword",
 						"bigipAddress",
@@ -51,6 +52,12 @@
 			"Description":"Application Connector instance name",
 			"Type":"String",
 			"Default":"appConnector"
+		},
+		"acContainerURL":{
+			"Description":"Application Connector Docker container location",
+			"Type":"String",
+			"MaxLength":"255",
+			"MinLength":"3"
 		},
 		"appInstance1Name":{
 			"Description":"1st web application instance name",
@@ -383,8 +390,8 @@
 								"owner":"root",
 								"group":"root"
 							},
-							"/opt/f5_ac_0_1_7.tar.gz":{
-								"source":"https://raw.githubusercontent.com/ArtiomL/f5-app-connector/master/f5_ac_0_1_7.tar.gz",
+							"/opt/f5_ac.tar.gz":{
+								"source": { "Ref" : "acContainerURL" },
 								"mode":"000644",
 								"owner":"root",
 								"group":"root"
@@ -410,10 +417,10 @@
 											"#\n",
 											"# Load the Proxy Container\n",
 											"cd /opt\n",
-											"docker load -i f5_ac_0_1_7.tar.gz\n",
+											"docker load -i f5_ac.tar.gz\n",
 											"#\n",
 											"# Start the Proxy Container\n",
-											"docker run -d -e httpPort=8090 --restart=always --net=host -e proxyName=",
+											"docker run -d -e adminPort=8090 --restart=always --net=host -e proxyName=",
 											{
 												"Ref":"appConnectorName"
 											},
@@ -425,7 +432,7 @@
 											{
 												"Ref":"acPassword"
 											},
-											" -it -v /home/user/cloud_vendors/aws:/app/proxy/vendors/aws -v /app/proxy/log -v /app/proxy/config f5/ac:v0.1.7\n",
+											" -it -v /home/user/cloud_vendors/aws:/app/proxy/vendors/aws -v /app/proxy/log -v /app/proxy/config f5/ac\n",
 											"#\n",
 											"# Download Application Connector Control\n",
 											"curl --silent https://raw.githubusercontent.com/ArtiomL/f5-app-connector/master/acctl.js -o /opt/acctl.js\n",
