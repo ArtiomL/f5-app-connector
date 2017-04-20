@@ -10,7 +10,6 @@
 					},
 					"Parameters":[
 						"appConnectorName",
-						"acContainerURL",
 						"acUsername",
 						"acPassword",
 						"bigipAddress",
@@ -52,12 +51,6 @@
 			"Description":"Application Connector instance name",
 			"Type":"String",
 			"Default":"appConnector"
-		},
-		"acContainerURL":{
-			"Description":"Application Connector Docker container location",
-			"Type":"String",
-			"MaxLength":"255",
-			"MinLength":"3"
 		},
 		"appInstance1Name":{
 			"Description":"1st web application instance name",
@@ -391,10 +384,11 @@
 								"group":"root"
 							},
 							"/opt/f5_ac.tar.gz":{
-								"source": { "Ref" : "acContainerURL" },
+								"source":"https://ds.f5labs.one/f5_ac.tar.gz",
 								"mode":"000644",
 								"owner":"root",
-								"group":"root"
+								"group":"root",
+								"authentication":"authACPC"
 							},
 							"/opt/appConfiguartion.sh":{
 								"content":{
@@ -531,6 +525,18 @@
 								"command":"/opt/signalDone.sh &>> /var/log/signal.log"
 							}
 						}
+					}
+				},
+				"AWS::CloudFormation::Authentication":{
+					"authACPC":{
+						"type":"basic",
+						"username":{ 
+							"Ref":"acUsername"
+						},
+						"password":{
+							"Ref":"acPassword"
+						},
+						"uris" : [ "https://ds.f5labs.one" ]
 					}
 				}
 			},
