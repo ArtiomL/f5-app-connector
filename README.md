@@ -13,7 +13,6 @@ Based on a lab by [Thomas Stanley](https://github.com/tstanley93)
 - [Topology](#topology)
 - [Installation](#installation)
 	- [AWS CloudFormation](#aws-cloudformation)
-- [Beta](#beta)
 - [License](LICENSE)
 
 &nbsp;&nbsp;
@@ -34,11 +33,3 @@ F5 Networks Application Connector delivers secure and available application serv
 [![Launch Stack](https://cdn.rawgit.com/ArtiomL/f5-app-connector/master/img/cfls.svg)](https://console.aws.amazon.com/cloudformation/home?region=eu-central-1#/stacks/new?stackName=F5-Application-Connector&templateURL=https://s3.eu-central-1.amazonaws.com/f5-app-connector/aws_cf_stack.json)
 
 &nbsp;&nbsp;
-
-## Beta
-
-The code in this repository is used for Proof of Concept purposes only and is **not** officially [supported](https://support.f5.com/csp/article/K80012344) by F5 Networks.
-
-Please apply to participate in the [F5 Beta Program](https://f5beta.centercode.com/welcome/) to gain early access to F5 Application Connector.
-
-This community is open to all customers who want to help improve our solutions through beta testing and provide feedback that will influence the course of future products.
