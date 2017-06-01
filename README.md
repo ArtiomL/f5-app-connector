@@ -21,6 +21,8 @@ Based on a lab by [Thomas Stanley](https://github.com/tstanley93)
 
 F5 Networks Application Connector delivers secure and available application services from the edge of the cloud by automatically discovering public cloud-hosted instances and connecting them to the on-premises data center or hosted location.
 
+[Datasheet](https://www.f5.com/pdf/products/application-connector-datasheet.pdf)
+
 &nbsp;&nbsp;
 
 ## Topology
