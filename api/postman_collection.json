@@ -1,0 +1,476 @@
+{
+	"variables": [],
+	"info": {
+		"name": "F5 Application Connector",
+		"_postman_id": "3c538e97-ec26-265c-a339-bc84b41cbdb5",
+		"description": "",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Proxy",
+			"description": "",
+			"item": [
+				{
+					"name": "Info",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": {
+								"username": "{{user_ACP}}",
+								"password": "{{pass_ACP}}",
+								"saveHelperData": true,
+								"showPassword": false
+							}
+						},
+						"url": "https://{{pip_ACP}}:8090/proxy/v1/info",
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Basic YWRtaW46YWRtaW4=",
+								"description": ""
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {},
+						"description": ""
+					},
+					"response": []
+				},
+				{
+					"name": "Nodes",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": {
+								"username": "{{user_ACP}}",
+								"password": "{{pass_ACP}}",
+								"saveHelperData": true,
+								"showPassword": false
+							}
+						},
+						"url": "https://{{pip_ACP}}:8090/proxy/v1/nodes",
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Basic YWRtaW46YWRtaW4=",
+								"description": ""
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {},
+						"description": ""
+					},
+					"response": []
+				},
+				{
+					"name": "Service Center Connections",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": {
+								"username": "{{user_ACP}}",
+								"password": "{{pass_ACP}}",
+								"saveHelperData": true,
+								"showPassword": false
+							}
+						},
+						"url": "https://{{pip_ACP}}:8090/proxy/v1/connections",
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Basic YWRtaW46YWRtaW4=",
+								"description": ""
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {},
+						"description": ""
+					},
+					"response": []
+				},
+				{
+					"name": "New SC Connection",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": {
+								"username": "{{user_ACP}}",
+								"password": "{{pass_ACP}}",
+								"saveHelperData": true,
+								"showPassword": false
+							}
+						},
+						"url": "https://{{pip_ACP}}:8090/proxy/v1/connections",
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Basic YWRtaW46YWRtaW4=",
+								"description": ""
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"description": ""
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"BIG-IP\",\n  \"ip\": \"{{pip_ACSC}}\",\n  \"port\": 443\n}"
+						},
+						"description": ""
+					},
+					"response": []
+				},
+				{
+					"name": "Add a Node",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": {
+								"username": "{{user_ACP}}",
+								"password": "{{pass_ACP}}",
+								"saveHelperData": true,
+								"showPassword": false
+							}
+						},
+						"url": "https://{{pip_ACP}}:8090/proxy/v1/nodes",
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Basic YWRtaW46YWRtaW4=",
+								"description": ""
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"description": ""
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"appInstance1\",\n  \"ip\": \"10.10.20.222\",\n  \"port\": 80,\n  \"id\": \"i-01\",\n  \"vpc\": \"vpc-01\",\n  \"status\": \"online\"\n}"
+						},
+						"description": ""
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Service Center",
+			"description": "",
+			"item": [
+				{
+					"name": "Logs",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": {
+								"username": "{{user_ACSC}}",
+								"password": "{{pass_ACSC}}",
+								"saveHelperData": true,
+								"showPassword": false
+							}
+						},
+						"url": "https://{{mgmtip_ACSC}}/mgmt/shared/cloudproxy/v1/logs",
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Basic cmVzdDpyZXN0",
+								"description": ""
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {},
+						"description": ""
+					},
+					"response": []
+				},
+				{
+					"name": "Proxies",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"id_ACP\", jsonData[0].proxy_id);"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": {
+								"username": "{{user_ACSC}}",
+								"password": "{{pass_ACSC}}",
+								"saveHelperData": true,
+								"showPassword": false
+							}
+						},
+						"url": "https://{{mgmtip_ACSC}}/mgmt/shared/cloudproxy/v1/proxies",
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Basic cmVzdDpyZXN0",
+								"description": ""
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {},
+						"description": ""
+					},
+					"response": []
+				},
+				{
+					"name": "Add a Proxy",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": {
+								"username": "{{user_ACSC}}",
+								"password": "{{pass_ACSC}}",
+								"saveHelperData": true,
+								"showPassword": false
+							}
+						},
+						"url": "https://{{mgmtip_ACSC}}/mgmt/shared/cloudproxy/v1/proxies",
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Basic cmVzdDpyZXN0",
+								"description": ""
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"description": ""
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"authorized\",\n  \"proxy_id\": \"101\",\n  \"vpc_id\": \"vpc-01\",\n  \"ip\": \"{{pip_ACP}}\",\n  \"port\": 13131,\n  \"name\": \"AWS\",\n  \"desc\": \"AC Proxy\",\n  \"nodes_attached\": 0\n}"
+						},
+						"description": ""
+					},
+					"response": []
+				},
+				{
+					"name": "Delete a Proxy",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": {
+								"username": "{{user_ACSC}}",
+								"password": "{{pass_ACSC}}",
+								"saveHelperData": true,
+								"showPassword": false
+							}
+						},
+						"url": "https://{{mgmtip_ACSC}}/mgmt/shared/cloudproxy/v1/proxies/101",
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Basic cmVzdDpyZXN0",
+								"description": ""
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"description": ""
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"description": ""
+					},
+					"response": []
+				},
+				{
+					"name": "Authorize a Proxy",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": {
+								"username": "{{user_ACSC}}",
+								"password": "{{pass_ACSC}}",
+								"saveHelperData": true,
+								"showPassword": false
+							}
+						},
+						"url": "https://{{mgmtip_ACSC}}/mgmt/shared/cloudproxy/v1/proxies/{{id_ACP}}",
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Basic cmVzdDpyZXN0",
+								"description": ""
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"description": ""
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"authorize\"\n}"
+						},
+						"description": ""
+					},
+					"response": []
+				},
+				{
+					"name": "Nodes",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"name_NODE1\", jsonData.items[0].name);",
+									"postman.setEnvironmentVariable(\"name_NODE2\", jsonData.items[1].name);"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": {
+								"username": "{{user_ACSC}}",
+								"password": "{{pass_ACSC}}",
+								"saveHelperData": true,
+								"showPassword": false
+							}
+						},
+						"url": "https://{{mgmtip_ACSC}}/mgmt/tm/ltm/node/",
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Basic cmVzdDpyZXN0",
+								"description": ""
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"description": ""
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"name\":\"pool_APP\",\n\t\"members\":[\n\t\t{\n\t\t\t\"name\":\"{{name_NODE1}}:80\"\n\t\t},\n\t\t{\n\t\t\t\"name\":\"{{name_NODE2}}:80\"\n\t\t}\n\t]\n}"
+						},
+						"description": ""
+					},
+					"response": []
+				},
+				{
+					"name": "Add Nodes to Pool",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": {
+								"username": "{{user_ACSC}}",
+								"password": "{{pass_ACSC}}",
+								"saveHelperData": true,
+								"showPassword": false
+							}
+						},
+						"url": "https://{{mgmtip_ACSC}}/mgmt/tm/ltm/pool/pool_APP",
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Basic cmVzdDpyZXN0",
+								"description": ""
+							},
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"description": ""
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"name\":\"pool_APP\",\n\t\"monitor\": \"/Common/mon_eHTTP \",\n\t\"members\":[\n\t\t{\n\t\t\t\"name\":\"{{name_NODE1}}:80\"\n\t\t},\n\t\t{\n\t\t\t\"name\":\"{{name_NODE2}}:80\"\n\t\t}\n\t]\n}"
+						},
+						"description": ""
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
