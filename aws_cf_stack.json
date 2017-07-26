@@ -426,7 +426,7 @@
 											{
 												"Ref":"acPassword"
 											},
-											" -it -v /home/user/cloud_vendors/aws:/app/proxy/vendors/aws -v /app/proxy/log -v /app/proxy/config f5/acproxy:1.0.0-build.44\n",
+											" -it -v /home/user/cloud_vendors/aws:/app/proxy/vendors/aws -v /app/proxy/log -v /app/proxy/config f5/acproxy:1.0.1-build.52\n",
 											"#\n",
 											"# Download Application Connector Control\n",
 											"curl --silent https://raw.githubusercontent.com/ArtiomL/f5-app-connector/master/acctl.js -o /opt/acctl.js\n",
