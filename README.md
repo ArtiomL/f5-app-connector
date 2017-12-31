@@ -1,7 +1,7 @@
 # <img align="center" src="img/appc.png" height="56">&nbsp;&nbsp;F5 Application Connector&nbsp;&nbsp;<img align="center" src="img/docker.png" height="56">
 [![Releases](https://img.shields.io/github/release/ArtiomL/f5-app-connector.svg)](https://github.com/ArtiomL/f5-app-connector/releases)
 [![Commits](https://img.shields.io/github/commits-since/ArtiomL/f5-app-connector/v1.0.3.svg?label=commits%20since)](https://github.com/ArtiomL/f5-app-connector/commits/master)
-[![Maintenance](https://img.shields.io/maintenance/yes/2017.svg)](https://github.com/ArtiomL/f5-app-connector/graphs/code-frequency)
+[![Maintenance](https://img.shields.io/maintenance/yes/2018.svg)](https://github.com/ArtiomL/f5-app-connector/graphs/code-frequency)
 [![Issues](https://img.shields.io/github/issues/ArtiomL/f5-app-connector.svg)](https://github.com/ArtiomL/f5-app-connector/issues)
 ![TMOS](https://img.shields.io/badge/tmos-13.0-ff0000.svg)
 [![License](https://img.shields.io/badge/license-Apache%20v2.0-blue.svg)](/LICENSE)
