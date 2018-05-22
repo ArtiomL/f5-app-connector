@@ -24,6 +24,8 @@ F5 Networks Application Connector delivers secure and available application serv
 
 [Datasheet](https://www.f5.com/pdf/products/application-connector-datasheet.pdf)
 
+**UPDATE**: End of Sale (EoS) [announcement](https://support.f5.com/csp/article/K33324902) for the F5 Application Connector.
+
 &nbsp;&nbsp;
 
 ## Topology
